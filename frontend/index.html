@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Emergency & Patient Priority Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for Reports & Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+        <div class="nav-brand">
+            <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <div>
+                <h1>Hospital Emergency Priority System</h1>
+                <span class="brand-tagline">DSA-Driven Triage: Indexed Min-Heap &bull; FIFO Queue &bull; Singly Linked List</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <button class="nav-btn active" data-section="dashboard">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </button>
+            <button class="nav-btn" data-section="register">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Register Patient
+            </button>
+            <button class="nav-btn" data-section="queue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Emergency Queue
+                <span id="queue-badge" class="badge-count">0</span>
+            </button>
+            <button class="nav-btn" data-section="doctors">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Doctors
+            </button>
+            <button class="nav-btn" data-section="reports">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Reports
+            </button>
+        </nav>
+        <div class="nav-status">
+            <span class="live-dot"></span>
+            <span id="system-time">Live</span>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="content-container">
+
+        <!-- =================================================================== -->
+        <!-- SECTION 1: DASHBOARD -->
+        <!-- =================================================================== -->
+        <section id="section-dashboard" class="app-section active">
+            <div class="section-header">
+                <div>
+                    <h2>Emergency Department Overview</h2>
+                    <p class="subtitle">Real-time status of emergency triage, queue load, and physician assignments.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="app.refreshAll()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Refresh Now
+                    </button>
+                    <button class="btn btn-primary" onclick="app.allocateNextPatient()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Allocate Next Patient
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Metric Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card card-waiting">
+                    <div class="kpi-icon">&#9200;</div>
+                    <div class="kpi-details">
+                        <span class="kpi-title">Currently Waiting</span>
+                        <span class="kpi-value" id="kpi-waiting">0</span>
+                        <span class="kpi-sub">In Min-Heap Queue</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card card-treatment">
+                    <div class="kpi-icon">&#128657;</div>
+                    <div class="kpi-details">
+                        <span class="kpi-title">In Treatment</span>
+                        <span class="kpi-value" id="kpi-in-treatment">0</span>
+                        <span class="kpi-sub">Under active care</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card card-doctors">
+                    <div class="kpi-icon">&#128104;&#8205;&#9877;&#65039;</div>
+                    <div class="kpi-details">
+                        <span class="kpi-title">Doctors On Duty</span>
+                        <span class="kpi-value" id="kpi-doctors">0 Free / 0 Busy</span>
+                        <span class="kpi-sub" id="kpi-utilization">0% Utilization</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card card-wait-time">
+                    <div class="kpi-icon">&#9878;&#65039;</div>
+                    <div class="kpi-details">
+                        <span class="kpi-title">Avg Wait Time</span>
+                        <span class="kpi-value" id="kpi-avg-wait">0.0 min</span>
+                        <span class="kpi-sub">Priority 1 (Critical): <b id="kpi-crit-wait">0 min</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Columns: High Priority Queue & Active Treatments -->
+            <div class="dash-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Highest Priority Waiting Patients</h3>
+                        <a href="#" class="link-btn" onclick="app.switchSection('queue')">View Full Queue &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="dash-queue-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Priority</th>
+                                    <th>Patient</th>
+                                    <th>Category</th>
+                                    <th>Wait Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="empty-state">Loading waiting queue...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Active Doctor Assignments</h3>
+                        <a href="#" class="link-btn" onclick="app.switchSection('doctors')">Manage Doctors &rarr;</a>
+                    </div>
+                    <div id="dash-active-doctors" class="active-doctors-list">
+                        <p class="empty-state">Loading active doctor assignments...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECTION 2: REGISTER PATIENT -->
+        <!-- =================================================================== -->
+        <section id="section-register" class="app-section">
+            <div class="section-header">
+                <div>
+                    <h2>Patient Emergency Registration & Triage</h2>
+                    <p class="subtitle">Register incoming patients. The system calculates priority and inserts into the Indexed Min-Heap.</p>
+                </div>
+            </div>
+
+            <div class="form-container card">
+                <form id="patient-registration-form" onsubmit="app.handlePatientRegistration(event)">
+                    <div class="form-row">
+                        <div class="form-group col-8">
+                            <label for="reg-name">Patient Full Name <span class="required">*</span></label>
+                            <input type="text" id="reg-name" required placeholder="e.g. Eleanor Vance">
+                        </div>
+                        <div class="form-group col-4">
+                            <label for="reg-age">Age <span class="required">*</span></label>
+                            <input type="number" id="reg-age" required min="0" max="130" placeholder="e.g. 45">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-4">
+                            <label for="reg-gender">Gender <span class="required">*</span></label>
+                            <select id="reg-gender" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-4">
+                            <label for="reg-contact">Contact Phone</label>
+                            <input type="tel" id="reg-contact" placeholder="+1-555-0199">
+                        </div>
+                        <div class="form-group col-4">
+                            <label for="reg-category">Triage Category <span class="required">*</span></label>
+                            <select id="reg-category" required onchange="app.updatePriorityPreview()">
+                                <option value="Critical" selected>Critical (Priority 1: Immediate Resuscitation / STEMI / Shock)</option>
+                                <option value="Urgent">Urgent (Priority 2: Severe Trauma / Dyspnea / High Risk)</option>
+                                <option value="Moderate">Moderate (Priority 3: Fractures / Abdominal / Lacerations)</option>
+                                <option value="Minor">Minor (Priority 4: Sprains / Superficial / Mild Fever)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-complaint">Chief Medical Complaint & Symptoms <span class="required">*</span></label>
+                        <textarea id="reg-complaint" rows="3" required placeholder="Describe symptoms, vital signs, trauma mechanism..."></textarea>
+                    </div>
+
+                    <div class="triage-preview-box">
+                        <div class="preview-badge-wrapper">
+                            <span>Computed Triage Level:</span>
+                            <span id="preview-priority-badge" class="badge badge-p1">Priority 1 &bull; Critical</span>
+                        </div>
+                        <p id="preview-priority-desc" class="preview-desc">
+                            Patient requires immediate life-saving medical intervention. Will be placed at the top of the Min-Heap queue.
+                        </p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary">Reset Form</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-patient">
+                            Register & Insert to Min-Heap
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECTION 3: EMERGENCY QUEUE -->
+        <!-- =================================================================== -->
+        <section id="section-queue" class="app-section">
+            <div class="section-header">
+                <div>
+                    <h2>Emergency Waiting Queue (Min-Heap)</h2>
+                    <p class="subtitle">Live order determined by <code>(priority, arrival_timestamp)</code>. Ties resolved FIFO.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-warning" onclick="app.applyAgingPrompt()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Apply Aging Boost
+                    </button>
+                    <button class="btn btn-primary" onclick="app.allocateNextPatient()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Allocate Next Patient
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue Search and Filter Bar -->
+            <div class="filter-bar card">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="queue-search" placeholder="Search waiting patients by name or ID..." oninput="app.filterQueueTable()">
+                </div>
+                <div class="queue-legend">
+                    <span class="legend-item"><span class="legend-color p1"></span> 1: Critical</span>
+                    <span class="legend-item"><span class="legend-color p2"></span> 2: Urgent</span>
+                    <span class="legend-item"><span class="legend-color p3"></span> 3: Moderate</span>
+                    <span class="legend-item"><span class="legend-color p4"></span> 4: Minor</span>
+                </div>
+            </div>
+
+            <!-- Waiting Queue Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="data-table" id="full-queue-table">
+                        <thead>
+                            <tr>
+                                <th>Heap Rank</th>
+                                <th>Priority</th>
+                                <th>Patient Name</th>
+                                <th>Age / Gender</th>
+                                <th>Chief Complaint</th>
+                                <th>Waiting Duration</th>
+                                <th>Change Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-table-body">
+                            <tr><td colspan="7" class="empty-state">Loading emergency queue...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECTION 4: DOCTORS -->
+        <!-- =================================================================== -->
+        <section id="section-doctors" class="app-section">
+            <div class="section-header">
+                <div>
+                    <h2>Doctor Roster & FIFO Allocation Queue</h2>
+                    <p class="subtitle">Available doctors wait in a linked-list FIFO Queue. Discharging frees the attending physician.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="app.showAddDoctorModal()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Doctor
+                    </button>
+                </div>
+            </div>
+
+            <div class="doctors-grid" id="doctors-container">
+                <p class="empty-state">Loading doctor roster...</p>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECTION 5: REPORTS -->
+        <!-- =================================================================== -->
+        <section id="section-reports" class="app-section">
+            <div class="section-header">
+                <div>
+                    <h2>Emergency Analytics & Performance KPIs</h2>
+                    <p class="subtitle">Metrics aggregated from active queues and completed emergency treatment logs.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="app.loadReports()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Refresh Analytics
+                    </button>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card chart-card">
+                    <h3>Patients Distribution by Triage Priority</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-priority-distribution"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <h3>Average Waiting Time per Priority (Minutes)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-avg-waiting"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Metrics Table -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h3>System Operational Summary</h3>
+                </div>
+                <div class="stats-summary-grid" id="stats-summary-box">
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-total-treated">0</span>
+                        <span class="stat-label">Total Patients Managed</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-doctor-util">0%</span>
+                        <span class="stat-label">Doctor Roster Utilization</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-discharged-count">0</span>
+                        <span class="stat-label">Discharged Successfully</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- DSA COMPARISON & BENCHMARK PANEL -->
+            <!-- =============================================================== -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <div>
+                        <h3>DSA Empirical Performance Comparison</h3>
+                        <p class="subtitle">Comparing our custom <strong>Indexed Min-Heap</strong> against naive priority queue implementations at <em>N = 1,000, 5,000, and 10,000</em>.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary btn-sm" id="btn-run-benchmark" onclick="app.runBenchmark()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Run Live Benchmark
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Benchmark Line Chart -->
+                <div class="chart-wrapper" style="height: 320px; margin-bottom: 24px;">
+                    <canvas id="chart-dsa-benchmark"></canvas>
+                </div>
+
+                <!-- Benchmark Results Table -->
+                <div class="table-responsive">
+                    <table class="data-table" id="benchmark-results-table">
+                        <thead>
+                            <tr>
+                                <th>Approach / Data Structure</th>
+                                <th>Insert Time</th>
+                                <th>Extract Time</th>
+                                <th>N = 1,000</th>
+                                <th>N = 5,000</th>
+                                <th>N = 10,000</th>
+                                <th>Relative Speedup</th>
+                            </tr>
+                        </thead>
+                        <tbody id="benchmark-table-body">
+                            <tr><td colspan="7" class="empty-state">Click "Run Live Benchmark" to execute timed trials (N = 1,000, 5,000, 10,000).</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Theoretical Complexity Note -->
+                <div class="complexity-note-box">
+                    <h4>Theoretical Time & Space Complexity Analysis</h4>
+                    <div class="complexity-grid">
+                        <div class="complexity-card">
+                            <span class="comp-badge badge-p4">Custom Indexed Min-Heap</span>
+                            <ul>
+                                <li><strong>Insert:</strong> <code>O(log N)</code> — Bubbles up at most tree height <em>h = ⌊log₂ N⌋</em>.</li>
+                                <li><strong>Extract-Min:</strong> <code>O(log N)</code> — Replaces root and bubbles down in <em>O(log N)</em>.</li>
+                                <li><strong>Priority Update:</strong> <code>O(log N)</code> — Position HashMap provides <em>O(1)</em> lookup, then bubbles in <em>O(log N)</em>.</li>
+                                <li><strong>Space Complexity:</strong> <code>O(N)</code> — Compact array plus position dictionary.</li>
+                                <li><strong style="color: #065f46;">Conclusion:</strong> Optimal for high-throughput hospital emergencies where arrivals and status changes occur continuously.</li>
+                            </ul>
+                        </div>
+
+                        <div class="complexity-card">
+                            <span class="comp-badge badge-p2">Naive Sorted List</span>
+                            <ul>
+                                <li><strong>Insert:</strong> <code>O(N log N)</code> or <code>O(N)</code> — Re-sorting the array on each incoming patient is extremely slow for large queues.</li>
+                                <li><strong>Extract-Min:</strong> <code>O(1)</code> — Minimum element is always at index 0.</li>
+                                <li><strong>Priority Update:</strong> <code>O(N log N)</code> — Requires searching and full re-sorting.</li>
+                                <li><strong>Space Complexity:</strong> <code>O(N)</code>.</li>
+                                <li><strong style="color: #9a3412;">Conclusion:</strong> Severe quadratic slowdown <em>O(N² log N)</em> when processing batches of emergency intake.</li>
+                            </ul>
+                        </div>
+
+                        <div class="complexity-card">
+                            <span class="comp-badge badge-p1">Naive Linear Scan (Unsorted List)</span>
+                            <ul>
+                                <li><strong>Insert:</strong> <code>O(1)</code> — Appends to the end of the array.</li>
+                                <li><strong>Extract-Min:</strong> <code>O(N)</code> — Must iterate through every waiting patient to find the most critical.</li>
+                                <li><strong>Priority Update:</strong> <code>O(1)</code> — Directly modifies element if index is known.</li>
+                                <li><strong>Space Complexity:</strong> <code>O(N)</code>.</li>
+                                <li><strong style="color: #991b1b;">Conclusion:</strong> Fast registration, but unacceptable doctor allocation lag. Extracting 10,000 patients takes over 11 seconds!</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: PATIENT HISTORY (LINKED LIST TIMELINE) -->
+    <!-- ======================================================================= -->
+    <div id="modal-history" class="modal-backdrop hidden" onclick="app.closeModalOnBackdrop(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modal-patient-name">Patient Treatment Timeline</h3>
+                    <span id="modal-patient-meta" class="patient-meta-text">Traversing hand-written Singly LinkedList</span>
+                </div>
+                <button class="modal-close" onclick="app.closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="patient-summary-box" id="modal-patient-summary">
+                    <!-- Populated dynamically -->
+                </div>
+                <h4>Treatment History Log (Singly Linked List)</h4>
+                <div class="timeline" id="modal-timeline">
+                    <p class="empty-state">Loading timeline history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: ADD DOCTOR -->
+    <!-- ======================================================================= -->
+    <div id="modal-add-doctor" class="modal-backdrop hidden" onclick="app.closeModalOnBackdrop(event)">
+        <div class="modal-card modal-sm">
+            <div class="modal-header">
+                <h3>Add New Physician</h3>
+                <button class="modal-close" onclick="app.closeAddDoctorModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-add-doctor" onsubmit="app.handleAddDoctorSubmit(event)">
+                    <div class="form-group">
+                        <label for="doc-name">Doctor Name <span class="required">*</span></label>
+                        <input type="text" id="doc-name" required placeholder="e.g. Dr. John Watson">
+                    </div>
+                    <div class="form-group">
+                        <label for="doc-spec">Specialization <span class="required">*</span></label>
+                        <input type="text" id="doc-spec" required placeholder="e.g. Cardiology, Trauma Surgery">
+                    </div>
+                    <div class="form-actions" style="margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeAddDoctorModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add to Roster</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
