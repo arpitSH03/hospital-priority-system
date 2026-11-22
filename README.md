@@ -6,6 +6,16 @@ Built with **Python 3.11+**, **FastAPI**, **MySQL**, and a responsive **Vanilla 
 
 ---
 
+## 🌐 Live Demo & Working Links
+
+- **Local Live Web Dashboard:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Interactive API Documentation (Swagger UI):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Alternative API Reference (ReDoc):** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+- **GitHub Repository:** [https://github.com/arpitSH03/hospital-priority-system](https://github.com/arpitSH03/hospital-priority-system)
+- **Cloud Deployment Guide:** Deployable in 1 click on [Render.com](https://render.com) or [Railway.app](https://railway.app) (see Section 9).
+
+---
+
 ## 1. Problem Statement
 
 Traditional First-Come, First-Served (FCFS) hospital intake systems are fundamentally unsuited for Emergency Departments (ED). In acute clinical settings, medical severity must strictly dictate treatment order rather than arrival time; a patient presenting with an acute myocardial infarction (heart attack) cannot wait behind a patient with a minor ankle sprain.
