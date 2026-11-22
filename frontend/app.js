@@ -7,7 +7,12 @@
 // 1. Centralized API Client (api.js style)
 // ============================================================================
 const api = {
-    baseUrl: window.location.hostname === "arpitsh03.github.io" ? "https://hospital-priority-api.onrender.com/api" : "/api",
+    // Auto-detect environment:
+    // - GitHub Pages → use Railway deployed backend
+    // - Local → use same-origin FastAPI server
+    baseUrl: window.location.hostname === "arpitsh03.github.io"
+        ? "https://hospital-priority-system-production.up.railway.app/api"
+        : "/api",
 
     /**
      * Core fetch wrapper with JSON serialization and structured error handling.
