@@ -7,7 +7,7 @@
 // 1. Centralized API Client (api.js style)
 // ============================================================================
 const api = {
-    baseUrl: "/api",
+    baseUrl: window.location.hostname === "arpitsh03.github.io" ? "https://hospital-priority-api.onrender.com/api" : "/api",
 
     /**
      * Core fetch wrapper with JSON serialization and structured error handling.
